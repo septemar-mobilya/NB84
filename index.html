@@ -17,6 +17,12 @@ model-viewer{flex:1;width:100%;min-height:0;--progress-bar-color:var(--acc)}
 #ar{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:var(--acc);color:#fff;border:0;border-radius:4px;padding:14px 26px;font:600 1rem inherit;font-family:inherit}
 @media (prefers-color-scheme:dark){#ar{color:#07151a}}
 #err{display:none;padding:24px 18px}
+model-viewer{min-height:50vh}
+#qr{display:flex;gap:16px;align-items:center;padding:14px 18px;flex-wrap:wrap}
+#qc{background:#fff;border-radius:4px}
+#qr button{font:600 .9rem inherit;font-family:inherit;padding:10px 16px;border:0;border-radius:4px;background:var(--acc);color:#fff}
+@media (prefers-color-scheme:dark){#qr button{color:#07151a}}
+#noar{margin:0;padding:0 18px 10px}
 </style>
 </head>
 <body>
@@ -26,6 +32,12 @@ model-viewer{flex:1;width:100%;min-height:0;--progress-bar-color:var(--acc)}
   ar ar-modes="webxr scene-viewer quick-look" ar-scale="fixed" alt="3D model">
   <button id="ar" slot="ar-button">Odanda gör (AR)</button>
 </model-viewer>
+<p id="noar" hidden>AR bu cihazda kullanılamıyor. Sayfayı telefondan aç (Android: Chrome, iPhone: Safari).</p>
+<section id="qr">
+  <canvas id="qc" width="160" height="160"></canvas>
+  <div><strong>Telefondan aç</strong><p>Bu kodu telefon kamerasıyla okut.</p><button id="qd">QR kodu indir (PNG)</button></div>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
 <script type="module">
 const DEFAULT = 'nb84-kabin-202.glb';          // ?m= verilmezse açılacak dosya
@@ -34,9 +46,13 @@ if(!/^[\w\-. ()%]+\.glb$/i.test(f)){ document.getElementById('err').style.displa
 else{
   const mv = document.getElementById('mv');
   mv.src = f;
+  mv.addEventListener('load', () => { if(!mv.canActivateAR) document.getElementById('noar').hidden = false; });
   document.getElementById('t').textContent = decodeURIComponent(f).replace(/\.glb$/i,'');
   mv.addEventListener('error', () => { document.getElementById('t').textContent='Model açılamadı'; });
 }
+const qc = document.getElementById('qc');
+if(window.QRCode) QRCode.toCanvas(qc, location.href, {width:160, margin:2});
+document.getElementById('qd').onclick = () => { const a = document.createElement('a'); a.href = qc.toDataURL('image/png'); a.download = 'qr-kod.png'; a.click(); };
 </script>
 </body>
 </html>
