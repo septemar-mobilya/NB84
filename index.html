@@ -2,163 +2,41 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GLB Sıkıştırıcı</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3D Model</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap">
 <style>
-:root{--bg:#eef2f3;--ink:#10252e;--mute:#5b707a;--line:#cfdadd;--card:#fff;--acc:#0a6c8a;--ok:#1f7a4d}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1a20;--ink:#e6eef0;--mute:#8aa0a8;--line:#27393f;--card:#14242b;--acc:#4cc2e0;--ok:#5fd394}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "IBM Plex Sans",system-ui,sans-serif}
-main{max-width:760px;margin:0 auto;padding:40px 20px 64px}
-h1{font-size:2rem;margin:0 0 6px;letter-spacing:-.01em}
-p.sub{margin:0 0 28px;color:var(--mute)}
-#drop{display:block;border:2px dashed var(--acc);border-radius:6px;padding:44px 20px;text-align:center;cursor:pointer;background:var(--card)}
-#drop.over{background:color-mix(in srgb,var(--acc) 12%,var(--card))}
-#drop input{display:none}
-.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin:24px 0}
-label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.9rem}
-label.f span{font-weight:400;color:var(--mute)}
-select,input[type=range]{width:100%;font:inherit}
-select{padding:8px;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--ink)}
-button{font:inherit;font-weight:600;padding:12px 22px;border:0;border-radius:4px;background:var(--acc);color:#fff;cursor:pointer}
-button:disabled{opacity:.45;cursor:not-allowed}
-button:focus-visible,select:focus-visible,#drop:focus-within{outline:3px solid var(--acc);outline-offset:2px}
-@media (prefers-color-scheme:dark){button{color:#07151a}}
-#log{margin-top:20px;font-size:.9rem;color:var(--mute);min-height:1.5em;white-space:pre-wrap}
-#res{display:none;margin-top:24px;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px}
-.sizes{display:flex;gap:28px;flex-wrap:wrap;align-items:baseline;margin-bottom:16px}
-.sizes b{font-size:1.6rem}
-.sizes .after b{color:var(--ok)}
-model-viewer{width:100%;height:340px;background:var(--bg);border-radius:4px;margin-top:16px}
-.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+:root{--bg:#eef2f3;--ink:#10252e;--mute:#5b707a;--acc:#0a6c8a}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a20;--ink:#e6eef0;--mute:#8aa0a8;--acc:#4cc2e0}}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 "IBM Plex Sans",system-ui,sans-serif;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{padding:14px 18px}
+h1{font-size:1.1rem;margin:0;word-break:break-word}
+p{margin:2px 0 0;color:var(--mute);font-size:.88rem}
+model-viewer{flex:1;width:100%;min-height:0;--progress-bar-color:var(--acc)}
+#ar{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:var(--acc);color:#fff;border:0;border-radius:4px;padding:14px 26px;font:600 1rem inherit;font-family:inherit}
+@media (prefers-color-scheme:dark){#ar{color:#07151a}}
+#err{display:none;padding:24px 18px}
 </style>
 </head>
 <body>
-<main>
-<h1>GLB sıkıştırıcı</h1>
-<p class="sub">Dosya sunucuya yüklenmez. Tüm işlem tarayıcında yapılır.</p>
-
-<label id="drop" for="file">
-  <input type="file" id="file" accept=".glb,model/gltf-binary">
-  <strong id="dropText">GLB dosyasını buraya bırak veya seç</strong>
-</label>
-
-<div class="opts">
-  <label class="f">Doku boyutu (en fazla)
-    <select id="texSize"><option value="256">256 px</option><option value="512" selected>512 px</option><option value="1024">1024 px</option><option value="2048">2048 px</option></select>
-  </label>
-  <label class="f">Doku formatı
-    <select id="texFmt"><option value="image/webp" selected>WebP (en küçük)</option><option value="image/jpeg">JPEG (en uyumlu)</option></select>
-  </label>
-  <label class="f">Doku kalitesi: <span id="qv">70</span>
-    <input type="range" id="q" min="30" max="95" value="70">
-  </label>
-  <label class="f">Üçgenlerin kalacak oranı: <span id="rv">100</span>%
-    <input type="range" id="r" min="5" max="100" value="100">
-  </label>
-</div>
-
-<div class="row"><button id="go" disabled>Sıkıştır</button></div>
-<div id="log" role="status"></div>
-
-<section id="res">
-  <div class="sizes">
-    <div>Önce<br><b id="b0">-</b></div>
-    <div class="after">Sonra<br><b id="b1">-</b></div>
-    <div>Kazanç<br><b id="b2">-</b></div>
-  </div>
-  <div class="row"><button id="dl">Sıkıştırılmış GLB'yi indir</button></div>
-  <model-viewer id="mv" camera-controls auto-rotate shadow-intensity="1" alt="Sıkıştırılmış model önizlemesi"></model-viewer>
-</section>
-</main>
-
+<header><h1 id="t">Model yükleniyor...</h1><p>Döndürmek için sürükle, yakınlaştırmak için iki parmakla çek.</p></header>
+<div id="err">Model bulunamadı. Adres şu biçimde olmalı: <code>?m=dosya-adi.glb</code></div>
+<model-viewer id="mv" camera-controls touch-action="pan-y" shadow-intensity="1" environment-image="neutral"
+  ar ar-modes="webxr scene-viewer quick-look" ar-scale="fixed" alt="3D model">
+  <button id="ar" slot="ar-button">Odanda gör (AR)</button>
+</model-viewer>
 <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
 <script type="module">
-import {WebIO} from 'https://cdn.jsdelivr.net/npm/@gltf-transform/core@4.1.0/+esm';
-import {KHRONOS_EXTENSIONS, EXTMeshoptCompression, EXTTextureWebP} from 'https://cdn.jsdelivr.net/npm/@gltf-transform/extensions@4.1.0/+esm';
-import {prune, dedup, weld, simplify, quantize, meshopt} from 'https://cdn.jsdelivr.net/npm/@gltf-transform/functions@4.1.0/+esm';
-import {MeshoptEncoder, MeshoptDecoder, MeshoptSimplifier} from 'https://cdn.jsdelivr.net/npm/meshoptimizer@0.22.0/+esm';
-
-const $ = id => document.getElementById(id);
-const mb = n => n >= 1048576 ? (n/1048576).toFixed(2)+' MB' : (n/1024).toFixed(0)+' KB';
-const log = t => $('log').textContent = t;
-let src = null, outUrl = null, outBlob = null, name = 'model';
-
-$('q').oninput = e => $('qv').textContent = e.target.value;
-$('r').oninput = e => $('rv').textContent = e.target.value;
-
-function pick(f){
-  if(!f) return;
-  if(!/\.glb$/i.test(f.name)){ log('Bu dosya GLB değil. .glb uzantılı bir dosya seç. GLTF için önce GLB olarak dışa aktar.'); return; }
-  src = f; name = f.name.replace(/\.glb$/i,'');
-  $('dropText').textContent = f.name + ' (' + mb(f.size) + ')';
-  $('go').disabled = false; log('');
+const DEFAULT = 'nb84-kabin-202.glb';          // ?m= verilmezse açılacak dosya
+const f = new URLSearchParams(location.search).get('m') || DEFAULT;
+if(!/^[\w\-. ()%]+\.glb$/i.test(f)){ document.getElementById('err').style.display='block'; document.getElementById('mv').remove(); document.getElementById('t').textContent='Hata'; }
+else{
+  const mv = document.getElementById('mv');
+  mv.src = f;
+  document.getElementById('t').textContent = decodeURIComponent(f).replace(/\.glb$/i,'');
+  mv.addEventListener('error', () => { document.getElementById('t').textContent='Model açılamadı'; });
 }
-$('file').onchange = e => pick(e.target.files[0]);
-const d = $('drop');
-d.ondragover = e => {e.preventDefault(); d.classList.add('over')};
-d.ondragleave = () => d.classList.remove('over');
-d.ondrop = e => {e.preventDefault(); d.classList.remove('over'); pick(e.dataTransfer.files[0])};
-
-async function shrinkTextures(doc, maxSize, mime, quality){
-  if(mime === 'image/webp') doc.createExtension(EXTTextureWebP).setRequired(true);
-  const texs = doc.getRoot().listTextures();
-  let i = 0;
-  for(const t of texs){
-    i++; log('Dokular küçültülüyor ' + i + '/' + texs.length);
-    const old = t.getImage(), oldMime = t.getMimeType();
-    if(!old || !/^image\/(png|jpeg|webp)$/.test(oldMime)) continue;
-    const bmp = await createImageBitmap(new Blob([old], {type: oldMime}));
-    const k = Math.min(1, maxSize / Math.max(bmp.width, bmp.height));
-    const w = Math.max(1, Math.round(bmp.width*k)), h = Math.max(1, Math.round(bmp.height*k));
-    const cv = new OffscreenCanvas(w, h);
-    cv.getContext('2d').drawImage(bmp, 0, 0, w, h);
-    const blob = await cv.convertToBlob({type: mime, quality: quality/100});
-    if(blob.type !== mime) continue;
-    const buf = new Uint8Array(await blob.arrayBuffer());
-    if(buf.byteLength < old.byteLength){ t.setImage(buf); t.setMimeType(mime); }
-  }
-}
-
-$('go').onclick = async () => {
-  $('go').disabled = true; $('res').style.display = 'none';
-  try{
-    log('Kütüphaneler hazırlanıyor...');
-    await Promise.all([MeshoptEncoder.ready, MeshoptDecoder.ready, MeshoptSimplifier.ready]);
-    const io = new WebIO()
-      .registerExtensions(KHRONOS_EXTENSIONS.concat([EXTMeshoptCompression, EXTTextureWebP]))
-      .registerDependencies({'meshopt.decoder': MeshoptDecoder, 'meshopt.encoder': MeshoptEncoder});
-    log('Dosya okunuyor...');
-    const doc = await io.readBinary(new Uint8Array(await src.arrayBuffer()));
-
-    log('Gereksiz veriler temizleniyor...');
-    await doc.transform(prune(), dedup(), weld());
-
-    const ratio = +$('r').value / 100;
-    if(ratio < 1){ log('Geometri sadeleştiriliyor...'); await doc.transform(simplify({simplifier: MeshoptSimplifier, ratio, error: 0.01})); }
-
-    await shrinkTextures(doc, +$('texSize').value, $('texFmt').value, +$('q').value);
-
-    log('Mesh sıkıştırılıyor...');
-    await doc.transform(quantize(), meshopt({encoder: MeshoptEncoder, level: 'high'}));
-
-    const out = await io.writeBinary(doc);
-    outBlob = new Blob([out], {type: 'model/gltf-binary'});
-    if(outUrl) URL.revokeObjectURL(outUrl);
-    outUrl = URL.createObjectURL(outBlob);
-    $('b0').textContent = mb(src.size); $('b1').textContent = mb(out.byteLength);
-    $('b2').textContent = '%' + Math.max(0, Math.round(100 - out.byteLength/src.size*100));
-    $('mv').src = outUrl; $('res').style.display = 'block';
-    log('Bitti. Sonuç yeterince küçük değilse doku boyutunu veya üçgen oranını düşür.');
-  }catch(err){
-    console.error(err);
-    log('Hata: ' + err.message + '\nDraco ile sıkıştırılmış GLB dosyaları desteklenmez. Önce sıkıştırılmamış GLB olarak dışa aktar.');
-  }
-  $('go').disabled = false;
-};
-$('dl').onclick = () => { const a = document.createElement('a'); a.href = outUrl; a.download = name + '-small.glb'; a.click(); };
 </script>
 </body>
 </html>
