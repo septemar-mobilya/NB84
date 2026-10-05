@@ -10,7 +10,8 @@
 @media (prefers-color-scheme:dark){:root{--bg:#0e1a20;--ink:#e6eef0;--mute:#8aa0a8;--acc:#4cc2e0}}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--ink);font:16px/1.5 "IBM Plex Sans",system-ui,sans-serif;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
-header{padding:14px 18px}
+header{padding:14px 18px;display:flex;align-items:center;gap:14px}
+#logo{height:44px;width:auto;max-width:140px;object-fit:contain}
 h1{font-size:1.1rem;margin:0;word-break:break-word}
 p{margin:2px 0 0;color:var(--mute);font-size:.88rem}
 model-viewer{flex:1;width:100%;min-height:0;--progress-bar-color:var(--acc)}
@@ -26,7 +27,7 @@ model-viewer{min-height:50vh}
 </style>
 </head>
 <body>
-<header><h1 id="t">Model yükleniyor...</h1><p>Döndürmek için sürükle, yakınlaştırmak için iki parmakla çek.</p></header>
+<header><img id="logo" src="logo.png" alt="Logo" onerror="this.remove()"><div><h1 id="t">Model yükleniyor...</h1><p>Döndürmek için sürükle, yakınlaştırmak için iki parmakla çek.</p></div></header>
 <div id="err">Model bulunamadı. Adres şu biçimde olmalı: <code>?m=dosya-adi.glb</code></div>
 <model-viewer id="mv" camera-controls touch-action="pan-y" shadow-intensity="1" environment-image="neutral"
   ar ar-modes="webxr scene-viewer quick-look" ar-scale="fixed" alt="3D model">
