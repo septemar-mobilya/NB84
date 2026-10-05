@@ -50,9 +50,20 @@ else{
   document.getElementById('t').textContent = decodeURIComponent(f).replace(/\.glb$/i,'');
   mv.addEventListener('error', () => { document.getElementById('t').textContent='Model açılamadı'; });
 }
-const qc = document.getElementById('qc');
-if(window.QRCode) QRCode.toCanvas(qc, location.href, {width:160, margin:2});
-document.getElementById('qd').onclick = () => { const a = document.createElement('a'); a.href = qc.toDataURL('image/png'); a.download = 'qr-kod.png'; a.click(); };
+const qc = document.getElementById('qc'), qd = document.getElementById('qd'), url = location.href;
+let qrImg = null;
+try{
+  if(!window.QRCode) throw new Error('QRCode yok');
+  await QRCode.toCanvas(qc, url, {width:160, margin:2});
+}catch(e){
+  qrImg = new Image(); qrImg.width = 160; qrImg.height = 160; qrImg.alt = 'QR kod'; qrImg.style.background = '#fff'; qrImg.style.borderRadius = '4px';
+  qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(url);
+  qc.replaceWith(qrImg);
+}
+qd.onclick = () => {
+  if(qrImg){ window.open(qrImg.src, '_blank'); return; }
+  const a = document.createElement('a'); a.href = qc.toDataURL('image/png'); a.download = 'qr-kod.png'; a.click();
+};
 </script>
 </body>
 </html>
