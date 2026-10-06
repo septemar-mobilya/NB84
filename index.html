@@ -45,7 +45,9 @@ model-viewer{flex:1;width:100%;min-height:50vh;--progress-bar-color:var(--acc)}
 #pm,#pb{touch-action:pan-x pan-y}
 #pb{flex:1;overflow:auto;padding:12px}
 #pw{display:inline-block;min-width:100%}
-#pb canvas{display:block;margin:0 auto 12px;background:#fff;max-width:none}
+.pg{margin:0 auto 12px;background:#fff;color:#333;font-size:.85rem}
+#pb .pg canvas{display:block;margin:0;max-width:none}
+#ver{padding:6px 18px 14px;font-size:.7rem;color:var(--mute)}
 #adlar{display:none;margin:0;padding:8px 18px;font-size:.8rem;white-space:pre-wrap;color:var(--mute)}
 </style>
 </head>
@@ -126,28 +128,45 @@ function loadPdfJs(){
   });
   return pdfLib;
 }
-let rtoken = 0;
+let rtoken = 0, io = null;
 async function renderPdf(anchor){
   if(!curPdf) return;
   const pdf = curPdf, box = $('pb'), tk = ++rtoken;
   const w = box.clientWidth - 24, dpr = Math.min(window.devicePixelRatio || 1, 2);
   const oldL = box.scrollLeft, oldT = box.scrollTop;
+  if(io) io.disconnect();
   const wrap = document.createElement('div'); wrap.id = 'pw';
-  for(let i = 1; i <= pdf.numPages; i++){
-    const page = await pdf.getPage(i);
-    if(tk !== rtoken) return;
-    const sc = (w / page.getViewport({scale: 1}).width) * zoom;
-    const vp = page.getViewport({scale: sc * dpr}), cv = document.createElement('canvas');
-    cv.width = vp.width; cv.height = vp.height; cv.style.width = (vp.width / dpr) + 'px'; cv.style.height = (vp.height / dpr) + 'px';
-    wrap.append(cv);
-    await page.render({canvasContext: cv.getContext('2d'), viewport: vp}).promise;
-    if(tk !== rtoken) return;
-  }
+  const holders = [];
+  try{
+    for(let i = 1; i <= pdf.numPages; i++){
+      const page = await pdf.getPage(i);
+      if(tk !== rtoken) return;
+      const sc = (w / page.getViewport({scale: 1}).width) * zoom;
+      const vp = page.getViewport({scale: sc});
+      const h = document.createElement('div'); h.className = 'pg';
+      h.style.width = vp.width + 'px'; h.style.height = vp.height + 'px';
+      wrap.append(h); holders.push({h, page, sc, vp});
+    }
+  }catch(e){ console.warn(e); $('pb').textContent = 'Pafta okunamadı.'; return; }
   box.replaceChildren(wrap);
   if(anchor){
     box.scrollLeft = (oldL + anchor.cx) * anchor.ratio - anchor.cx;
     box.scrollTop = (oldT + anchor.cy) * anchor.ratio - anchor.cy;
   }
+  const draw = async o => {
+    if(o.done || tk !== rtoken) return; o.done = true;
+    try{
+      let k = dpr; const px = o.vp.width * o.vp.height * k * k, MAX = 10e6;
+      if(px > MAX) k *= Math.sqrt(MAX / px);
+      const vp = o.page.getViewport({scale: o.sc * k}), cv = document.createElement('canvas');
+      cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height);
+      cv.style.width = o.vp.width + 'px'; cv.style.height = o.vp.height + 'px';
+      await o.page.render({canvasContext: cv.getContext('2d'), viewport: vp}).promise;
+      if(tk === rtoken) o.h.replaceChildren(cv);
+    }catch(e){ console.warn(e); o.h.textContent = 'Sayfa çizilemedi.'; }
+  };
+  io = new IntersectionObserver(es => { for(const en of es) if(en.isIntersecting) draw(en.target._o); }, {root: box, rootMargin: '900px 0px'});
+  for(const o of holders){ o.h._o = o; io.observe(o.h); }
 }
 async function openPdf(url, title){
   const abs = new URL(url, location.href).href;
@@ -189,13 +208,14 @@ $('zm').onclick = () => zoomBy(1 / 1.25);
     const w = $('pw');
     if(w){ w.style.transformOrigin = (box.scrollLeft + pin.cx - 12) + 'px ' + (box.scrollTop + pin.cy - 12) + 'px'; w.style.transform = 'scale(' + pin.ratio + ')'; }
   }, {passive: false});
-  box.addEventListener('touchend', e => {
+  const endPin = e => {
     if(!pin || e.touches.length >= 2) return;
     const p = pin; pin = null;
     const w = $('pw');
     if(Math.abs(p.ratio - 1) < 0.02){ if(w) w.style.transform = ''; return; }
     zoom *= p.ratio; renderPdf(p);
-  });
+  };
+  box.addEventListener('touchend', endPin); box.addEventListener('touchcancel', endPin);
   for(const ev of ['gesturestart', 'gesturechange', 'gestureend']) $('pm').addEventListener(ev, e => e.preventDefault());
 }
 
@@ -276,5 +296,6 @@ async function showList(){
   }
 }
 </script>
+<footer id="ver">Sürüm 7</footer>
 </body>
 </html>
